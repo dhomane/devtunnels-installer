@@ -88,8 +88,9 @@ if ! grep -q 'alias tunnel=' "$SHELL_CONFIG"; then
     echo "Added alias 'tunnel' to $SHELL_CONFIG"
 fi
 
-# Source the updated shell configuration
+# Source the updated shell configuration and reinitialize the shell
 source "$SHELL_CONFIG"
+exec "$SHELL"
 
 echo "devtunnel CLI installed!"
 echo "Version: $(~/bin/devtunnel --version)"
