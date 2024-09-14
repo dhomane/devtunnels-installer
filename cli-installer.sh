@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+
+mkdir -p ~/bin
+
+set -e
+
+env=prod
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -e|--env)
+            env="$2"
+            shift
+            shift
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            exit 1
+            ;;
+    esac
+done
+
+if [[ "$env" != "dev" && "$env" != "ppe" && "$env" != "prod" ]]; then
+    echo "Invalid environment: $env. Allowed values are dev, ppe, and prod."
+    exit 1
+fi
+
+echo "Downloading the devtunnel CLI..."
+
+ARCH="$(uname -m)"
+OS="$(uname)"
+
+if [[ "$OS" == "Darwin" ]]; then
+    if [[ "$ARCH" == "arm64" ]]; then
+        URL="https://tunnelsassets$env.blob.core.windows.net/cli/osx-arm64-devtunnel"
+    elif [[ "$ARCH" == "x86_64" ]]; then
+        URL="https://tunnelsassets$env.blob.core.windows.net/cli/osx-x64-devtunnel"
+    else
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+    fi
+elif [[ "$OS" == "Linux" ]]; then
+    if [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]]; then
+        URL="https://tunnelsassets$env.blob.core.windows.net/cli/linux-arm64-devtunnel"
+    elif [[ "$ARCH" == "x86_64" ]]; then
+        URL="https://tunnelsassets$env.blob.core.windows.net/cli/linux-x64-devtunnel"
+    else
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+    fi
+    
+    # Detecting Linux distribution to install dependencies
+    if command -v apt-get > /dev/null; then
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y libsecret-1-0
+    elif command -v dnf > /dev/null; then
+        sudo dnf -y install libsecret
+    else
+        echo "Unsupported package manager. Please install libsecret manually."
+        exit 1
+    fi
+else
+    echo "Unsupported OS: $OS"
+    exit 1
+fi
+
+curl -sL -o ~/bin/devtunnel $URL || { echo "Cannot install CLI. Aborting."; exit 1; }
+chmod +x ~/bin/devtunnel
+
+if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> "${HOME}/.${SHELL##*/}rc"
+    echo "Added $HOME/bin to PATH in ${HOME}/.${SHELL##*/}rc"
+    source "${HOME}/.${SHELL##*/}rc"
+fi
+
+echo "devtunnel CLI installed!"
+echo "Version: $(~/bin/devtunnel --version)"
+echo "To get started, run: devtunnel -h"
