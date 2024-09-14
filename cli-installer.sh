@@ -92,6 +92,6 @@ fi
 source "$SHELL_CONFIG"
 exec "$SHELL"
 
-echo "devtunnel CLI installed!"
+echo "Devtunnel CLI installed!"
 echo "Version: $(~/bin/devtunnel --version)"
 echo "To get started, run: tunnel -h"
