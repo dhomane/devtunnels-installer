@@ -66,12 +66,30 @@ fi
 curl -sL -o ~/bin/devtunnel $URL || { echo "Cannot install CLI. Aborting."; exit 1; }
 chmod +x ~/bin/devtunnel
 
-if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
-    echo 'export PATH="$HOME/bin:$PATH"' >> "${HOME}/.${SHELL##*/}rc"
-    echo "Added $HOME/bin to PATH in ${HOME}/.${SHELL##*/}rc"
-    source "${HOME}/.${SHELL##*/}rc"
+# Determine the current shell and update the appropriate configuration file
+SHELL_CONFIG=""
+if [[ "$SHELL" == *"zsh"* ]]; then
+    SHELL_CONFIG="$HOME/.zshrc"
+elif [[ "$SHELL" == *"bash"* ]]; then
+    SHELL_CONFIG="$HOME/.bashrc"
+else
+    echo "Unsupported shell: $SHELL"
+    exit 1
 fi
+
+if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> "$SHELL_CONFIG"
+    echo "Added $HOME/bin to PATH in $SHELL_CONFIG"
+fi
+
+# Add alias to the shell configuration
+if ! grep -q 'alias tunnel=' "$SHELL_CONFIG"; then
+    echo 'alias tunnel="devtunnel"' >> "$SHELL_CONFIG"
+    echo "Added alias 'tunnel' to $SHELL_CONFIG"
+fi
+
+source "$SHELL_CONFIG"
 
 echo "devtunnel CLI installed!"
 echo "Version: $(~/bin/devtunnel --version)"
-echo "To get started, run: devtunnel -h"
+echo "To get started, run: tunnel -h"
